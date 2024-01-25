@@ -18,32 +18,24 @@ io.on('connection', (socket) => {
   socket.on('createRoom', (username) => {
     const roomCode = generateRoomCode();
     socket.join(roomCode);
-    socket.emit('code',roomCode)
-    rooms[roomCode] = { users: [username], messages: [] };
-    io.to(roomCode).emit('showmessage', rooms[roomCode].users);
-    io.to(roomCode).emit('updateUsers', rooms[roomCode].users);
+    socket.emit('code', roomCode);
+    rooms[roomCode] = { users: [{ id: socket.id, username }], messages: [] };
+    io.to(roomCode).emit('showmessage', rooms[roomCode].users.map(user => user.username));
+    io.to(roomCode).emit('updateUsers', rooms[roomCode].users.map(user => user.username));
     io.to(roomCode).emit('updateMessages', rooms[roomCode].messages);
   });
 
   socket.on('joinRoom', (data) => {
     const { roomCode, username } = data;
     if (rooms[roomCode]) {
-      let flag=0;
-      for(let i=0;i<rooms[roomCode].users.length;i++)
-      {
-        if(rooms[roomCode].users[i]==username)
-        {
-          flag=1;
-        }
-      }
-      if(flag)
-      socket.emit('roomError', 'Already Entered');
-      else
-      {
+      const userExists = rooms[roomCode].users.some(user => user.username === username);
+      if (userExists) {
+        socket.emit('roomError', 'Already Entered');
+      } else {
         socket.join(roomCode);
-        rooms[roomCode].users.push(username);
-        io.to(roomCode).emit('showmessage', rooms[roomCode].users);
-        io.to(roomCode).emit('updateUsers', rooms[roomCode].users);
+        rooms[roomCode].users.push({ id: socket.id, username });
+        io.to(roomCode).emit('showmessage', rooms[roomCode].users.map(user => user.username));
+        io.to(roomCode).emit('updateUsers', rooms[roomCode].users.map(user => user.username));
         io.to(roomCode).emit('updateMessages', rooms[roomCode].messages);
       }
     } else {
@@ -51,31 +43,36 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('draw', (data) => {
+    const { roomCode, username, coordinates } = data;
+    io.to(roomCode).emit('draw', { username, coordinates });
+  });
+  socket.on('canv', (data) => {
+    const { roomCode, username } = data;
+    console.log("$$");
+    io.to(roomCode).emit('can-create', { username });
+  });
+  
+  socket.on('down', (data) => {
+    const { roomCode, username, coordinates } = data;
+    io.to(roomCode).emit('ondown', { username, coordinates });
+  });
+  
+
   socket.on('sendMessage', (data) => {
-    let flag=0;
     const { roomCode, username, message } = data;
-    for(let i=0;i<rooms[roomCode].users.length;i++)
-    {
-      if(rooms[roomCode].users[i]==username)
-      {
-        flag=1;
-      }
-    }
-    if(flag)
-    {
-      const timestamp = new Date().toLocaleTimeString();
-      const formattedMessage = `${timestamp} - ${username}: ${message}`;
-      rooms[roomCode].messages.push(formattedMessage);
-      io.to(roomCode).emit('updateMessages', rooms[roomCode].messages);
-    }
+    const timestamp = new Date().toLocaleTimeString();
+    const formattedMessage = `${timestamp} - ${username}: ${message}`;
+    rooms[roomCode].messages.push(formattedMessage);
+    io.to(roomCode).emit('updateMessages', rooms[roomCode].messages);
   });
 
   socket.on('disconnect', () => {
     Object.keys(rooms).forEach((roomCode) => {
-      const index = rooms[roomCode].users.indexOf(socket.id);
+      const index = rooms[roomCode].users.findIndex(user => user.id === socket.id);
       if (index !== -1) {
         rooms[roomCode].users.splice(index, 1);
-        io.to(roomCode).emit('updateUsers', rooms[roomCode].users);
+        io.to(roomCode).emit('updateUsers', rooms[roomCode].users.map(user => user.username));
       }
     });
   });
