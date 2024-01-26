@@ -13,6 +13,7 @@ app.get('/', (req, res) => {
 });
 
 const rooms = {};
+const delayInMilliseconds = 3000;
 
 io.on('connection', (socket) => {
   socket.on('createRoom', (username) => {
@@ -37,6 +38,7 @@ io.on('connection', (socket) => {
         io.to(roomCode).emit('showmessage', rooms[roomCode].users.map(user => user.username));
         io.to(roomCode).emit('updateUsers', rooms[roomCode].users.map(user => user.username));
         io.to(roomCode).emit('updateMessages', rooms[roomCode].messages);
+
       }
     } else {
       socket.emit('roomError', 'Room not found');

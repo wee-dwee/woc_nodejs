@@ -49,8 +49,8 @@
 </head>
 <body>
   <div class="container" id="chat-container">
-    <h1 class="text-center">Chat Application</h1>
-
+    <h1 class="text-center">Make N Crack</h1>
+    <h2 class="text-center" id="title"></h2>
     <div class="row">
       <div class="col-md-6">
         <div class="mb-3">
@@ -64,18 +64,18 @@
               <button onclick="createRoom()" class="btn btn-primary">Create Room</button>
             </div>
 
-            <div id="code"></div>
+            
 
             <div class="form-group">
               <label for="roomCode">Enter room code:</label>
               <input type="text" id="roomCode" class="form-control" placeholder="Enter room code">
             </div>
-
+            <div id="code"></div>
             <div class="form-group" id="but1">
               <button onclick="joinRoom()" class="btn btn-success">Join Room</button>
             </div>
           </div>
-          <div id="chat"></div>
+          <div id="chat" class="chat"></div>
         </div>
       </div>
 
@@ -102,10 +102,36 @@ socket.on('updateUsers', (users) => {
 socket.on('code', (roomCode) => {
   alert(roomCode);
   const messageContainer = document.getElementById('code');
-  messageContainer.innerHTML = `<p>Code:${roomCode}</p>`;
   document.getElementById('roomCode').value=roomCode;
+  messageContainer.innerHTML = `<button onclick="myFunction()" class="btn btn-primary">Copy Code</button>`;
+  messageContainer.innerHTML += ` <button onclick="starttimer(10)" class="btn btn-primary">Start timer</button>`;
   document.getElementById('roomCode').disabled=true;
 });
+
+function myFunction(){
+  var copyText = document.getElementById("roomCode");
+  copyText.select();
+  navigator.clipboard.writeText(copyText.value);
+};
+
+function starttimer(durationInSeconds) {
+  let remainingTime = durationInSeconds;
+
+  const timerInterval = setInterval(() => {
+    if (remainingTime <= 0) {
+      document.getElementById('title').innerHTML=``;
+      clearInterval(timerInterval);
+      alert('Timer Expired');
+    } else {
+      const minutes = Math.floor(remainingTime / 60);
+      const seconds = remainingTime % 60;
+      console.clear(); // Clears the console to update the display
+      console.log(`Time Remaining: ${minutes}m ${seconds}s`);
+      document.getElementById('title').innerHTML=`${minutes}m ${seconds}s`;
+      remainingTime--;
+    }
+  }, 1000); // Update every 1000 milliseconds (1 second)
+}
 
 socket.on('updateMessages', (messages) => {
   const messageContainer = document.getElementById('message-container');
@@ -137,6 +163,7 @@ socket.on('showmessage', (messages) => {
   </div>
   <button onclick="sendMessage()" class="btn btn-primary">Send</button>`
   messageContainer.scrollTop = messageContainer.scrollHeight;
+  socket.emit('updateScore', { roomCode,username });
 });
 
 socket.on('roomError', (error) => {
@@ -172,7 +199,6 @@ function sendMessage() {
   if (username && roomCode && message) {
     socket.emit('sendMessage', { roomCode, username, message });
     document.getElementById('messageInput').value = '';
-    socket.emit('updateScore', { roomCode,username });
   } else {
     alert('Please enter a username, room code, and message');
   }
