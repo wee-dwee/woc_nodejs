@@ -130,7 +130,7 @@ socket.on('showmessage', (messages) => {
   var3.scrollTop=var3.scrollHeight;
   socket.emit('canv', { roomCode, username });
   messageContainer=document.getElementById('chat')
-  messageContainer.innerHTML = `<div id="users" class="alert alert-info"></div>
+  messageContainer.innerHTML = `<div id="score" class="alert alert-info"></div><div id="users" class="alert alert-info"></div>
   <div id="message-container"></div>
   <div class="form-group">
     <input type="text" id="messageInput" class="form-control" placeholder="Type your message">
@@ -172,6 +172,7 @@ function sendMessage() {
   if (username && roomCode && message) {
     socket.emit('sendMessage', { roomCode, username, message });
     document.getElementById('messageInput').value = '';
+    socket.emit('updateScore', { roomCode,username });
   } else {
     alert('Please enter a username, room code, and message');
   }
@@ -222,6 +223,15 @@ let ctx=canvas.getContext('2d');
     ctx.lineCap = 'round';
     ctx.lineTo(coordinates.x, coordinates.y);
     ctx.stroke();
+  });
+  socket.on('newscore', (score) => {
+    const messageContainer = document.getElementById('score');
+    messageContainer.innerHTML = score.map(msg => `<div>${msg}</div>`).join('');
+    messageContainer.scrollTop = messageContainer.scrollHeight; 
+  });
+  socket.on('clearscore', (data) => {
+    console.log('clearscore');
+    document.getElementById('score').innerHTML = ``;
   });
   socket.on('ondown', (data) => {
     const { username, coordinates } = data;

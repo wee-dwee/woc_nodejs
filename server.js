@@ -19,7 +19,7 @@ io.on('connection', (socket) => {
     const roomCode = generateRoomCode();
     socket.join(roomCode);
     socket.emit('code', roomCode);
-    rooms[roomCode] = { users: [{ id: socket.id, username }], messages: [] };
+    rooms[roomCode] = { users: [{ id: socket.id, username, score: 0 }], messages: [] ,scoref:[]};
     io.to(roomCode).emit('showmessage', rooms[roomCode].users.map(user => user.username));
     io.to(roomCode).emit('updateUsers', rooms[roomCode].users.map(user => user.username));
     io.to(roomCode).emit('updateMessages', rooms[roomCode].messages);
@@ -33,7 +33,7 @@ io.on('connection', (socket) => {
         socket.emit('roomError', 'Already Entered');
       } else {
         socket.join(roomCode);
-        rooms[roomCode].users.push({ id: socket.id, username });
+        rooms[roomCode].users.push({ id: socket.id, username, score: 0 });
         io.to(roomCode).emit('showmessage', rooms[roomCode].users.map(user => user.username));
         io.to(roomCode).emit('updateUsers', rooms[roomCode].users.map(user => user.username));
         io.to(roomCode).emit('updateMessages', rooms[roomCode].messages);
@@ -42,14 +42,31 @@ io.on('connection', (socket) => {
       socket.emit('roomError', 'Room not found');
     }
   });
-
+  socket.on('updateScore', (data) => {
+    const roomCode = data.roomCode;
+    let username = data.username;
+    let formattedMessage;
+    io.to(roomCode).emit('clearscore');
+    if(rooms[roomCode] != null)
+    {
+      rooms[roomCode].score=[];
+      for(let i=0;i<rooms[roomCode].users.length;i++)
+      {
+        if(rooms[roomCode].users[i].username==username)
+        rooms[roomCode].users[i].score=rooms[roomCode].users[i].score+1;
+        formattedMessage = `${rooms[roomCode].users[i].username}: ${rooms[roomCode].users[i].score}`;
+        rooms[roomCode].score.push(formattedMessage);
+      }
+    }
+    io.to(roomCode).emit('newscore', rooms[roomCode].score);
+    
+  });
   socket.on('draw', (data) => {
     const { roomCode, username, coordinates } = data;
     io.to(roomCode).emit('draw', { username, coordinates });
   });
   socket.on('canv', (data) => {
     const { roomCode, username } = data;
-    console.log("$$");
     io.to(roomCode).emit('can-create', { username });
   });
   
