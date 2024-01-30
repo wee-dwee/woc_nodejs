@@ -109,7 +109,7 @@
     socket.on('updateUsers', (users) => {
       document.getElementById('users').innerHTML = `<strong>Users:</strong> ${users.join(', ')}`;
     });
-
+    let currentUserflag1;
     socket.on('code', (roomCode) => {
       //alert(roomCode);
       const username = document.getElementById('username').value;
@@ -126,50 +126,8 @@
       copyText.select();
       navigator.clipboard.writeText(copyText.value);
     };
-
-    function starttimer(durationInSeconds) {
-      let remainingTime = durationInSeconds;
-
-      const timerInterval = setInterval(() => {
-        if (remainingTime <= 0) {
-          document.getElementById('title').innerHTML = ``;
-          clearInterval(timerInterval);
-          alert('Timer Expired');
-        } else {
-          const minutes = Math.floor(remainingTime / 60);
-          const seconds = remainingTime % 60;
-          console.clear(); // Clears the console to update the display
-          console.log(`Time Remaining: ${minutes}m ${seconds}s`);
-          document.getElementById('title').innerHTML = `${minutes}m ${seconds}s`;
-          remainingTime--;
-        }
-      }, 1000); // Update every 1000 milliseconds (1 second)
-    }
-    socket.on('updatetime', (data) => {
-      const { username, slug } = data;
-      alert('$$');
-      let remainingTime = 10;
-      const username1 = document.getElementById('username').value;
-      const timerInterval = setInterval(() => {
-        if (remainingTime <= 0) {
-          if (username1 == username)
-            document.getElementById('title').innerHTML = `${slug} `;
-          else
-            document.getElementById('title').innerHTML = ``;
-          clearInterval(timerInterval);
-          alert('Timer Expired');
-        } else {
-          const minutes = Math.floor(remainingTime / 60);
-          const seconds = remainingTime % 60;
-          console.clear(); // Clears the console to update the display
-          console.log(`Time Remaining: ${minutes}m ${seconds}s`);
-          if (username1 == username)
-            document.getElementById('title').innerHTML = `${slug} ${minutes}m ${seconds}s`;
-          else
-            document.getElementById('title').innerHTML = `${minutes}m ${seconds}s`;
-          remainingTime--;
-        }
-      }, 1000); // Update every 1000 milliseconds (1 second)
+    socket.on('changecurrentuser', (currentUserflag) => {
+      currentUserflag1 = currentUserflag;
     });
     socket.on('timenword', (data) => {
       const { us1, slug, minutes, seconds, currentIndex } = data;
@@ -216,7 +174,19 @@
       var3.innerHTML = `<h3>Whiteboard:</h3>
           <div id="whiteboard-container">
             <canvas id="canvas" width="1" height="1"></canvas>
-          </div>`;
+          </div>
+          <!-- Add these input elements for line width and color -->
+<div class="form-group">
+  <label for="lineWidth">Line Width:</label>
+  <input type="range" id="lineWidth" min="1" max="10" value="2" class="form-control">
+</div>
+
+<div class="form-group">
+  <label for="lineColor">Line Color:</label>
+  <input type="color" id="lineColor" value="#000000" class="form-control">
+</div>
+
+          `;
       var3.scrollTop = var3.scrollHeight;
       socket.emit('canv', { roomCode, username });
       messageContainer = document.getElementById('chat')
@@ -228,7 +198,7 @@
   <button onclick="sendMessage()" class="btn btn-primary">Send</button>
   <button onclick="LeaveRoom()" class="btn btn-primary">Leave Room</button>
   <button onclick="clearcan()" class="btn btn-primary">Clear Drawing</button>`
-  
+
       messageContainer.scrollTop = messageContainer.scrollHeight;
       //socket.emit('updateScore', { roomCode,username });
     });
@@ -237,10 +207,11 @@
       alert(error);
       document.getElementById('username').disabled = false;
     });
-    function clearcan(){
+    function clearcan() {
+      const username = document.getElementById('username').value;
       const roomCode = document.getElementById('roomCode').value.toUpperCase();
       socket.emit(
-        'canclear',roomCode
+        'canclear', { roomCode, username }
       );
     }
     function createRoom() {
@@ -298,11 +269,21 @@
       let y;
       let rect;
       let mousedown = false;
+      let lineWidth = 2;
+      let lineColor = '#000000';
 
+      // Add event listeners to update line width and color
+      document.getElementById('lineWidth').addEventListener('input', function () {
+        lineWidth = this.value;
+      });
+
+      document.getElementById('lineColor').addEventListener('input', function () {
+        lineColor = this.value;
+      });
       socket.on('clearcanvas', () => {
         console.log('TTY'); // Corrected line
         ctx.beginPath(); // Start a new path
-        
+
         const canvas = document.getElementById('canvas');
         let remainingTime = 10;
         const timerInterval = setInterval(() => {
@@ -311,13 +292,13 @@
             ctx.clearRect(0, 0, 3000, 4000);
             canvas.style.opacity = 1;
           }
-          else{
-            canvas.style.opacity = remainingTime/10;
+          else {
+            canvas.style.opacity = remainingTime / 10;
           }
           remainingTime--;
         }, 100);
         //const canvas = document.getElementById('canvas');
-        
+
       });
 
       window.onmousedown = (e) => {  // Corrected line
@@ -344,21 +325,34 @@
         if (mousedown) {
           const username = document.getElementById('username').value;
           const roomCode = document.getElementById('roomCode').value.toUpperCase();
-          ctx.lineWidth = 2;
+          ctx.lineWidth = lineWidth;  // Set line width
+          ctx.strokeStyle = lineColor;  // Set line color
           ctx.lineCap = 'round';
-          ctx.lineTo(x, y);
-          ctx.stroke();
-          socket.emit('draw', { roomCode, username, coordinates: { x, y } });
+          if (currentUserflag1.username == username) {
+            ctx.lineTo(x, y);
+            ctx.stroke();
+          }
+          socket.emit('draw', { roomCode, username, coordinates: { x, y, lineWidth, lineColor } });
         }
-      }
+      };
 
+      // Modify the socket.on('draw') event to receive and use line width and color information
       socket.on('draw', (data) => {
         const { username, coordinates } = data;
-        ctx.lineWidth = 2;
+        ctx.lineWidth = coordinates.lineWidth;
+        ctx.strokeStyle = coordinates.lineColor;
         ctx.lineCap = 'round';
-        //ctx.beginPath(); // Start a new path
         ctx.lineTo(coordinates.x, coordinates.y);
         ctx.stroke();
+      });
+
+      // Modify the socket.on('ondown') event to receive and use line width and color information
+      socket.on('ondown', (data) => {
+        const { username, coordinates } = data;
+        ctx.lineWidth = coordinates.lineWidth;
+        ctx.strokeStyle = coordinates.lineColor;
+        ctx.beginPath(); // Start a new path
+        ctx.moveTo(coordinates.x, coordinates.y);
       });
 
       socket.on('newscore', (score) => {
@@ -379,8 +373,8 @@
             ctx.clearRect(0, 0, 3000, 4000);
             messageContainer.style.opacity = 1;
           }
-          else{
-            messageContainer.style.opacity = 1-remainingTime/10;
+          else {
+            messageContainer.style.opacity = 1 - remainingTime / 10;
           }
           remainingTime--;
         }, 100);
@@ -394,11 +388,6 @@
 
       socket.on('clearscore', (data) => {
         document.getElementById('score').innerHTML = '';
-      });
-
-      socket.on('ondown', (data) => {
-        const { username, coordinates } = data;
-        ctx.moveTo(coordinates.x, coordinates.y);
       });
     });
 

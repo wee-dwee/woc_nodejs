@@ -2,6 +2,7 @@ const express = require("express");
 const http = require("http");
 const socketIO = require("socket.io");
 const randomWordSlugs = require("random-word-slugs");
+const { NONAME } = require("dns");
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
@@ -11,10 +12,8 @@ app.use(express.static("public"));
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/index.html");
 });
-
+let currentUserflag;
 const rooms = {};
-const delayInMilliseconds = 3000;
-let rounds = {};
 const myMap = new Map();
 io.on("connection", (socket) => {
   socket.on("createRoom", (username) => {
@@ -44,8 +43,12 @@ io.on("connection", (socket) => {
     rooms[roomCode].messages.push(formattedMessage);
     io.to(roomCode).emit("updateMessages", rooms[roomCode].messages);
   });
-  socket.on("canclear", (roomCode) => {
-    io.to(roomCode).emit("clearcanvas");
+  socket.on("canclear", (data) => {
+    const { roomCode, username } = data;
+    if (currentUserflag) {
+      if (username == currentUserflag.username)
+        io.to(roomCode).emit("clearcanvas");
+    }
   });
   socket.on("joinRoom", (data) => {
     const { roomCode, username } = data;
@@ -93,7 +96,10 @@ io.on("connection", (socket) => {
   });
   socket.on("draw", (data) => {
     const { roomCode, username, coordinates } = data;
-    io.to(roomCode).emit("draw", { username, coordinates });
+    if (currentUserflag) {
+      if (username == currentUserflag.username)
+      io.to(roomCode).emit("draw", { username, coordinates });
+    }
   });
   socket.on("canv", (data) => {
     const { roomCode, username } = data;
@@ -138,6 +144,8 @@ io.on("connection", (socket) => {
       let guser;
       const waitturn = () => {
         io.to(roomCode).emit("clearcanvas");
+        currentUserflag = null;
+        io.to(roomCode).emit("changecurrentuser",currentUserflag);
         setTimeout(() => {
           startNextTurn(); // Start the next turn after a 5-second gap
         }, 5000);
@@ -150,13 +158,15 @@ io.on("connection", (socket) => {
       const startNextTurn = () => {
         if (currentIndex < rooms[roomCode].users.length) {
           const currentUser = rooms[roomCode].users[currentIndex];
+          currentUserflag = currentUser;
+          io.to(roomCode).emit("changecurrentuser",currentUserflag);
           console.log(roomCode);
           console.log(currentUser.username);
           let slug = randomWordSlugs.generateSlug(1, {
             format: "title",
             partsOfSpeech: ["noun"],
           });
-          let remainingTime = 20;
+          let remainingTime = 60;
 
           const timerInterval = setInterval(() => {
             if (remainingTime <= 0) {
@@ -198,8 +208,7 @@ io.on("connection", (socket) => {
                     for (let i = 0; i < rooms[roomCode].users.length; i++) {
                       if (rooms[roomCode].users[i].username == guser)
                         rooms[roomCode].users[i].score =
-                          rooms[roomCode].users[i].score +
-                          remainingTime * 5;
+                          rooms[roomCode].users[i].score + remainingTime * 5;
                       formattedMessage = `${rooms[roomCode].users[i].username}: ${rooms[roomCode].users[i].score}`;
                       rooms[roomCode].score.push(formattedMessage);
                     }
@@ -213,7 +222,7 @@ io.on("connection", (socket) => {
           }, 1000); // Update every 1000 milliseconds (1 second)
         } else {
           console.log("end");
-          let winner='No One';
+          let winner = "No One";
           let wineerscore = 0;
           if (rooms[roomCode] != null) {
             //rooms[roomCode].score = [];
