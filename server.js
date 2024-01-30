@@ -44,7 +44,9 @@ io.on("connection", (socket) => {
     rooms[roomCode].messages.push(formattedMessage);
     io.to(roomCode).emit("updateMessages", rooms[roomCode].messages);
   });
-
+  socket.on("canclear", (roomCode) => {
+    io.to(roomCode).emit("clearcanvas");
+  });
   socket.on("joinRoom", (data) => {
     const { roomCode, username } = data;
     if (rooms[roomCode]) {
@@ -114,6 +116,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
+    console.log("&&&");
     Object.keys(rooms).forEach((roomCode) => {
       const index = rooms[roomCode].users.findIndex(
         (user) => user.id === socket.id
@@ -134,6 +137,7 @@ io.on("connection", (socket) => {
       let currentIndex = 0;
       let guser;
       const waitturn = () => {
+        io.to(roomCode).emit("clearcanvas");
         setTimeout(() => {
           startNextTurn(); // Start the next turn after a 5-second gap
         }, 5000);
@@ -193,7 +197,9 @@ io.on("connection", (socket) => {
                     rooms[roomCode].score = [];
                     for (let i = 0; i < rooms[roomCode].users.length; i++) {
                       if (rooms[roomCode].users[i].username == guser)
-                        rooms[roomCode].users[i].score = rooms[roomCode].users[i].score + remainingTime*5;
+                        rooms[roomCode].users[i].score =
+                          rooms[roomCode].users[i].score +
+                          remainingTime * 5;
                       formattedMessage = `${rooms[roomCode].users[i].username}: ${rooms[roomCode].users[i].score}`;
                       rooms[roomCode].score.push(formattedMessage);
                     }
@@ -205,6 +211,20 @@ io.on("connection", (socket) => {
               }
             }
           }, 1000); // Update every 1000 milliseconds (1 second)
+        } else {
+          console.log("end");
+          let winner='No One';
+          let wineerscore = 0;
+          if (rooms[roomCode] != null) {
+            //rooms[roomCode].score = [];
+            for (let i = 0; i < rooms[roomCode].users.length; i++) {
+              if (rooms[roomCode].users[i].score > wineerscore) {
+                winner = rooms[roomCode].users[i].username;
+                wineerscore = rooms[roomCode].users[i].score;
+              }
+              io.to(roomCode).emit("showontitle", winner);
+            }
+          }
         }
       };
       let formattedMessage;
@@ -213,14 +233,15 @@ io.on("connection", (socket) => {
         rooms[roomCode].score = [];
         for (let i = 0; i < rooms[roomCode].users.length; i++) {
           if (rooms[roomCode].users[i].username == guser)
-            rooms[roomCode].users[i].score = rooms[roomCode].users[i].score + remainingTime*5;
+            rooms[roomCode].users[i].score =
+              rooms[roomCode].users[i].score + remainingTime * 5;
           formattedMessage = `${rooms[roomCode].users[i].username}: ${rooms[roomCode].users[i].score}`;
           rooms[roomCode].score.push(formattedMessage);
         }
       }
       io.to(roomCode).emit("newscore", rooms[roomCode].score);
       io.to(roomCode).emit("startturn");
-      socket.emit('rev');
+      socket.emit("rev");
       // Start the first turn
       startturn();
     }

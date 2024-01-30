@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -42,18 +43,21 @@
     canvas {
       border: 1px solid #000;
     }
-    .form-group{
+
+    .form-group {
       margin-bottom: 10px;
     }
-    .infos{
+
+    .infos {
       text-align: center;
-      background-color:#9ac0c8;
+      background-color: #9ac0c8;
       font-family: Georgia, 'Times New Roman', Times, serif;
       border-radius: 10px;
       padding: auto;
     }
   </style>
 </head>
+
 <body>
   <div class="container" id="chat-container">
     <h1 class="text-center">Make N Crack</h1>
@@ -71,7 +75,7 @@
               <button onclick="createRoom()" class="btn btn-primary">Create Room</button>
             </div>
 
-            
+
 
             <div class="form-group">
               <label for="roomCode">Enter room code:</label>
@@ -102,240 +106,274 @@
     // Your existing JavaScript code here
     const socket = io();
 
-socket.on('updateUsers', (users) => {
-  document.getElementById('users').innerHTML = `<strong>Users:</strong> ${users.join(', ')}`;
-});
+    socket.on('updateUsers', (users) => {
+      document.getElementById('users').innerHTML = `<strong>Users:</strong> ${users.join(', ')}`;
+    });
 
-socket.on('code', (roomCode) => {
-  //alert(roomCode);
-  const username = document.getElementById('username').value;
-  //socket.emit('updateScore', { roomCode,username });
-  const messageContainer = document.getElementById('code');
-  document.getElementById('roomCode').value=roomCode;
-  messageContainer.innerHTML = `<button onclick="myFunction()" class="btn btn-primary">Copy Code</button>`;
-  messageContainer.innerHTML += ` <button onclick="startgame()" class="btn btn-primary">Start Game</button>`;
-  document.getElementById('roomCode').disabled=true;
-});
+    socket.on('code', (roomCode) => {
+      //alert(roomCode);
+      const username = document.getElementById('username').value;
+      //socket.emit('updateScore', { roomCode,username });
+      const messageContainer = document.getElementById('code');
+      document.getElementById('roomCode').value = roomCode;
+      messageContainer.innerHTML = `<button onclick="myFunction()" class="btn btn-primary">Copy Code</button>`;
+      messageContainer.innerHTML += ` <button onclick="startgame()" class="btn btn-primary">Start Game</button>`;
+      document.getElementById('roomCode').disabled = true;
+    });
 
-function myFunction(){
-  var copyText = document.getElementById("roomCode");
-  copyText.select();
-  navigator.clipboard.writeText(copyText.value);
-};
+    function myFunction() {
+      var copyText = document.getElementById("roomCode");
+      copyText.select();
+      navigator.clipboard.writeText(copyText.value);
+    };
 
-function starttimer(durationInSeconds) {
-  let remainingTime = durationInSeconds;
+    function starttimer(durationInSeconds) {
+      let remainingTime = durationInSeconds;
 
-  const timerInterval = setInterval(() => {
-    if (remainingTime <= 0) {
-      document.getElementById('title').innerHTML=``;
-      clearInterval(timerInterval);
-      alert('Timer Expired');
-    } else {
-      const minutes = Math.floor(remainingTime / 60);
-      const seconds = remainingTime % 60;
-      console.clear(); // Clears the console to update the display
-      console.log(`Time Remaining: ${minutes}m ${seconds}s`);
-      document.getElementById('title').innerHTML=`${minutes}m ${seconds}s`;
-      remainingTime--;
+      const timerInterval = setInterval(() => {
+        if (remainingTime <= 0) {
+          document.getElementById('title').innerHTML = ``;
+          clearInterval(timerInterval);
+          alert('Timer Expired');
+        } else {
+          const minutes = Math.floor(remainingTime / 60);
+          const seconds = remainingTime % 60;
+          console.clear(); // Clears the console to update the display
+          console.log(`Time Remaining: ${minutes}m ${seconds}s`);
+          document.getElementById('title').innerHTML = `${minutes}m ${seconds}s`;
+          remainingTime--;
+        }
+      }, 1000); // Update every 1000 milliseconds (1 second)
     }
-  }, 1000); // Update every 1000 milliseconds (1 second)
-}
-socket.on('updatetime', (data) => {
-  const { username, slug } = data;
-  alert('$$');
-  let remainingTime = 10;
-  const username1 = document.getElementById('username').value;
-  const timerInterval = setInterval(() => {
-    if (remainingTime <= 0) {
-      if(username1==username)
-      document.getElementById('title').innerHTML=`${slug} `;
-      else
-      document.getElementById('title').innerHTML=``;
-      clearInterval(timerInterval);
-      alert('Timer Expired');
-    } else {
-      const minutes = Math.floor(remainingTime / 60);
-      const seconds = remainingTime % 60;
-      console.clear(); // Clears the console to update the display
-      console.log(`Time Remaining: ${minutes}m ${seconds}s`);
-      if(username1==username)
-      document.getElementById('title').innerHTML=`${slug} ${minutes}m ${seconds}s`;
-      else
-      document.getElementById('title').innerHTML=`${minutes}m ${seconds}s`;
-      remainingTime--;
-    }
-  }, 1000); // Update every 1000 milliseconds (1 second)
-});
-socket.on('timenword', (data) => {
-  const { us1, slug,minutes,seconds,currentIndex } = data;
-  //alert(seconds);
-  
-  const username1 = document.getElementById('username').value;
-  console.log(username,username1);
-  if(username1==us1)
-  document.getElementById('title').innerHTML=`You are The Painter Show Your Skills <br> WORD:${slug}<br> ${minutes}m ${seconds}s`;
-  else
-  document.getElementById('title').innerHTML=`Round:${currentIndex+1}<br>${minutes}m ${seconds}s`;
-});
-socket.on('wordnword', (data) => {
-  const {us1, slug} = data;
-  const username1 = document.getElementById('username').value;
-  if(username1==us1)
-  document.getElementById('title').innerHTML=`You need Practicing Blahh!! `;
-  else
-  document.getElementById('title').innerHTML=`The word was ${slug}`;
-});
-socket.on('abrupt', (data) => {
-  const {guser, slug} = data;
-  document.getElementById('title').innerHTML=`${guser} Guessed it correctly , the word was ${slug} `;
-});
-socket.on('updateMessages', (messages) => {
-  const messageContainer = document.getElementById('message-container');
-  messageContainer.innerHTML = messages.map(msg => `<div>${msg}</div>`).join('');
-  messageContainer.scrollTop = messageContainer.scrollHeight; 
-});
+    socket.on('updatetime', (data) => {
+      const { username, slug } = data;
+      alert('$$');
+      let remainingTime = 10;
+      const username1 = document.getElementById('username').value;
+      const timerInterval = setInterval(() => {
+        if (remainingTime <= 0) {
+          if (username1 == username)
+            document.getElementById('title').innerHTML = `${slug} `;
+          else
+            document.getElementById('title').innerHTML = ``;
+          clearInterval(timerInterval);
+          alert('Timer Expired');
+        } else {
+          const minutes = Math.floor(remainingTime / 60);
+          const seconds = remainingTime % 60;
+          console.clear(); // Clears the console to update the display
+          console.log(`Time Remaining: ${minutes}m ${seconds}s`);
+          if (username1 == username)
+            document.getElementById('title').innerHTML = `${slug} ${minutes}m ${seconds}s`;
+          else
+            document.getElementById('title').innerHTML = `${minutes}m ${seconds}s`;
+          remainingTime--;
+        }
+      }, 1000); // Update every 1000 milliseconds (1 second)
+    });
+    socket.on('timenword', (data) => {
+      const { us1, slug, minutes, seconds, currentIndex } = data;
+      //alert(seconds);
 
-socket.on('showmessage', (messages) => {
-  const username = document.getElementById('username').value;
-  const roomCode = document.getElementById('roomCode').value.toUpperCase();
-  const var1 =document.getElementById('but');
-  var1.innerHTML=``;
-  var1.scrollTop=var1.scrollHeight;
-  const var2 =document.getElementById('but1');
-  var2.innerHTML=``;
-  var2.scrollTop=var2.scrollHeight;
-  const var3 =document.getElementById('canvas-container');
-  var3.innerHTML=`<h3>Whiteboard:</h3>
+      const username1 = document.getElementById('username').value;
+      console.log(username, username1);
+      if (username1 == us1)
+        document.getElementById('title').innerHTML = `You are The Painter Show Your Skills <br> WORD:${slug}<br> ${minutes}m ${seconds}s`;
+      else
+        document.getElementById('title').innerHTML = `Round:${currentIndex + 1}<br>You Have to Guess<br>${minutes}m ${seconds}s`;
+    });
+    socket.on('wordnword', (data) => {
+      const { us1, slug } = data;
+      const username1 = document.getElementById('username').value;
+      if (username1 == us1)
+        document.getElementById('title').innerHTML = `You need Practicing Blahh!! `;
+      else
+        document.getElementById('title').innerHTML = `The word was ${slug}`;
+    });
+    socket.on('abrupt', (data) => {
+      const { guser, slug } = data;
+      document.getElementById('title').innerHTML = `${guser} Guessed it correctly , the word was ${slug} `;
+    });
+    socket.on('showontitle', (winner) => {
+      document.getElementById('title').innerHTML = `${winner} Has Won the Game!!, Congrats`;
+    });
+    socket.on('updateMessages', (messages) => {
+      const messageContainer = document.getElementById('message-container');
+      messageContainer.innerHTML = messages.map(msg => `<div>${msg}</div>`).join('');
+      messageContainer.scrollTop = messageContainer.scrollHeight;
+    });
+
+    socket.on('showmessage', (messages) => {
+      const username = document.getElementById('username').value;
+      const roomCode = document.getElementById('roomCode').value.toUpperCase();
+      const var1 = document.getElementById('but');
+      var1.innerHTML = ``;
+      var1.scrollTop = var1.scrollHeight;
+      const var2 = document.getElementById('but1');
+      var2.innerHTML = ``;
+      var2.scrollTop = var2.scrollHeight;
+      const var3 = document.getElementById('canvas-container');
+      var3.innerHTML = `<h3>Whiteboard:</h3>
           <div id="whiteboard-container">
             <canvas id="canvas" width="1" height="1"></canvas>
           </div>`;
-  var3.scrollTop=var3.scrollHeight;
-  socket.emit('canv', { roomCode, username });
-  messageContainer=document.getElementById('chat')
-  messageContainer.innerHTML = `<div id="score" class="alert alert-info"></div><div id="users" class="alert alert-info"></div>
+      var3.scrollTop = var3.scrollHeight;
+      socket.emit('canv', { roomCode, username });
+      messageContainer = document.getElementById('chat')
+      messageContainer.innerHTML = `<div id="score" class="alert alert-info"></div><div id="users" class="alert alert-info"></div>
   <div id="message-container"></div>
   <div class="form-group">
     <input type="text" id="messageInput" class="form-control" placeholder="Type your message">
   </div>
-  <button onclick="sendMessage()" class="btn btn-primary">Send</button>`
-  messageContainer.scrollTop = messageContainer.scrollHeight;
-  //socket.emit('updateScore', { roomCode,username });
-});
-
-socket.on('roomError', (error) => {
-  alert(error);
-  document.getElementById('username').disabled = false;
-});
-
-function createRoom() {
-  const username = document.getElementById('username').value;
-  if (username) {
-    socket.emit('createRoom', username);
-    document.getElementById('username').disabled = true;
-  } else {
-    alert('Please enter a username');
-  }
-}
-
-function joinRoom() {
-  const username = document.getElementById('username').value;
-  const roomCode = document.getElementById('roomCode').value.toUpperCase();
-  if (username && roomCode) {
-    socket.emit('joinRoom', { roomCode, username });
-    document.getElementById('username').disabled = true;
-    //socket.emit('updateScore', { roomCode,username });
-  } else {
-    alert('Please enter a username and room code');
-  }
-}
-
-function sendMessage() {
-  const username = document.getElementById('username').value;
-  const roomCode = document.getElementById('roomCode').value.toUpperCase();
-  const message = document.getElementById('messageInput').value;
-  if (username && roomCode && message) {
-    socket.emit('sendMessage', { roomCode, username, message });
-    document.getElementById('messageInput').value = '';
-  } else {
-    alert('Please enter a username, room code, and message');
-  }
-}
-function startgame(){
-  const username = document.getElementById('username').value;
-  const roomCode = document.getElementById('roomCode').value.toUpperCase();
-  socket.emit('startgame',{username,roomCode});
-}
-socket.on('can-create', (data) => {
-  const username  = data;
-  let canvas=document.getElementById('canvas');
-console.log(canvas);
-canvas.width=660;
-canvas.height=500;
-let ctx=canvas.getContext('2d');
-  let x;
-  let y;
-  let rect;
-  let mousedown=false;
+  <button onclick="sendMessage()" class="btn btn-primary">Send</button>
+  <button onclick="LeaveRoom()" class="btn btn-primary">Leave Room</button>
+  <button onclick="clearcan()" class="btn btn-primary">Clear Drawing</button>`
   
+      messageContainer.scrollTop = messageContainer.scrollHeight;
+      //socket.emit('updateScore', { roomCode,username });
+    });
 
+    socket.on('roomError', (error) => {
+      alert(error);
+      document.getElementById('username').disabled = false;
+    });
+    function clearcan(){
+      const roomCode = document.getElementById('roomCode').value.toUpperCase();
+      socket.emit(
+        'canclear',roomCode
+      );
+    }
+    function createRoom() {
+      const username = document.getElementById('username').value;
+      if (username) {
+        socket.emit('createRoom', username);
+        document.getElementById('username').disabled = true;
+      } else {
+        alert('Please enter a username');
+      }
+    }
 
-  window.onmousedown = (e) => {
-    ctx.moveTo(x,y);
-    const username = document.getElementById('username').value;
-    const roomCode = document.getElementById('roomCode').value.toUpperCase();
-    socket.emit('down', { roomCode, username, coordinates: { x, y } });
-    mousedown=true;
-  }
-  window.onmouseup = (e) => {
-    mousedown=false;
-  }
-  window.onmousemove = (e) =>
-  { 
-    rect = canvas.getBoundingClientRect();
-    x = e.clientX - rect.left;
-    y = e.clientY - rect.top;
-    if(mousedown)
-    {
+    function joinRoom() {
       const username = document.getElementById('username').value;
       const roomCode = document.getElementById('roomCode').value.toUpperCase();
-      ctx.lineWidth = 2;
-      ctx.lineCap = 'round';
-      ctx.lineTo(x,y);
-      ctx.stroke();
-      socket.emit('draw', { roomCode, username, coordinates: { x, y } });
+      if (username && roomCode) {
+        socket.emit('joinRoom', { roomCode, username });
+        document.getElementById('username').disabled = true;
+        //socket.emit('updateScore', { roomCode,username });
+      } else {
+        alert('Please enter a username and room code');
+      }
     }
-  }
-  socket.on('draw', (data) => {
-    const { username, coordinates } = data;
-    ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
-    ctx.lineTo(coordinates.x, coordinates.y);
-    ctx.stroke();
-  });
-  socket.on('newscore', (score) => {
-    //alert('$$');
-    const messageContainer = document.getElementById('score');
-    messageContainer.innerHTML = score.map(msg => `<div>${msg}</div>`).join('');
-    messageContainer.scrollTop = messageContainer.scrollHeight; 
-  });
-  socket.on('startturn', (score) => {
-    //alert('$$');
-    const messageContainer = document.getElementById('title').innerHTML='The Host has started the game, each player will have one turn to draw and many turns to guess<br>The host will draw first and the player who guesses the fastest will get most points<br> player with highest points at end wins!!';
-    const con=document.getElementById('code').innerHTML='';
-  });
-  socket.on('rev', (score) => {
-    //alert('$$');
-    const con=document.getElementById('code').innerHTML='';
-  });
-  socket.on('clearscore', (data) => {
-    console.log('clearscore');
-    document.getElementById('score').innerHTML = ``;
-  });
-  socket.on('ondown', (data) => {
-    const { username, coordinates } = data;
-    ctx.moveTo(coordinates.x, coordinates.y);
-  });});
+    function LeaveRoom() {
+      //alert('$$');
+      const username = document.getElementById('username').value;
+      const roomCode = document.getElementById('roomCode').value.toUpperCase();
+      location.reload();
+      //socket.emit('disconnect');
+    }
+    function sendMessage() {
+      const username = document.getElementById('username').value;
+      const roomCode = document.getElementById('roomCode').value.toUpperCase();
+      const message = document.getElementById('messageInput').value;
+      if (username && roomCode && message) {
+        socket.emit('sendMessage', { roomCode, username, message });
+        document.getElementById('messageInput').value = '';
+      } else {
+        alert('Please enter a username, room code, and message');
+      }
+    }
+    function startgame() {
+      const username = document.getElementById('username').value;
+      const roomCode = document.getElementById('roomCode').value.toUpperCase();
+      socket.emit('startgame', { username, roomCode });
+    }
+    socket.on('can-create', (data) => {
+      const username = data;
+      let canvas = document.getElementById('canvas');
+      console.log(canvas);
+      canvas.width = 660;
+      canvas.height = 500;
+      let ctx = canvas.getContext('2d');
+      let x;
+      let y;
+      let rect;
+      let mousedown = false;
+
+      socket.on('clearcanvas', () => {
+        console.log('TTY'); // Corrected line
+        ctx.clearRect(0, 0, 3000, 4000);
+      });
+
+      window.onmousedown = (e) => {  // Corrected line
+        rect = canvas.getBoundingClientRect();
+        x = e.clientX - rect.left;
+        y = e.clientY - rect.top;
+
+        ctx.beginPath(); // Start a new path
+        ctx.moveTo(x, y);
+        const username = document.getElementById('username').value;
+        const roomCode = document.getElementById('roomCode').value.toUpperCase();
+        socket.emit('down', { roomCode, username, coordinates: { x, y } });
+        mousedown = true;
+      }
+
+      window.onmouseup = (e) => {
+        mousedown = false;
+      }
+
+      window.onmousemove = (e) => {
+        rect = canvas.getBoundingClientRect();
+        x = e.clientX - rect.left;
+        y = e.clientY - rect.top;
+        if (mousedown) {
+          const username = document.getElementById('username').value;
+          const roomCode = document.getElementById('roomCode').value.toUpperCase();
+          ctx.lineWidth = 2;
+          ctx.lineCap = 'round';
+          ctx.lineTo(x, y);
+          ctx.stroke();
+          socket.emit('draw', { roomCode, username, coordinates: { x, y } });
+        }
+      }
+
+      socket.on('draw', (data) => {
+        const { username, coordinates } = data;
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        //ctx.beginPath(); // Start a new path
+        ctx.lineTo(coordinates.x, coordinates.y);
+        ctx.stroke();
+      });
+
+      socket.on('newscore', (score) => {
+        const messageContainer = document.getElementById('score');
+        messageContainer.innerHTML = score.map(msg => `<div>${msg}</div>`).join('');
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+      });
+
+      socket.on('startturn', (score) => {
+        const messageContainer = document.getElementById('title');
+        messageContainer.innerHTML = 'The Host has started the game, each player will have one turn to draw and many turns to guess<br>The host will draw first and the player who guesses the fastest will get most points<br> player with the highest points at the end wins!!';
+        const con = document.getElementById('code');
+        con.innerHTML = '';
+      });
+
+      socket.on('rev', (score) => {
+        const con = document.getElementById('code');
+        con.innerHTML = '';
+      });
+
+      socket.on('clearscore', (data) => {
+        document.getElementById('score').innerHTML = '';
+      });
+
+      socket.on('ondown', (data) => {
+        const { username, coordinates } = data;
+        ctx.moveTo(coordinates.x, coordinates.y);
+      });
+    });
+
   </script>
 </body>
+
 </html>
