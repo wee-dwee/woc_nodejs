@@ -301,7 +301,23 @@
 
       socket.on('clearcanvas', () => {
         console.log('TTY'); // Corrected line
-        ctx.clearRect(0, 0, 3000, 4000);
+        ctx.beginPath(); // Start a new path
+        
+        const canvas = document.getElementById('canvas');
+        let remainingTime = 10;
+        const timerInterval = setInterval(() => {
+          if (remainingTime < 0) {
+            clearInterval(timerInterval);
+            ctx.clearRect(0, 0, 3000, 4000);
+            canvas.style.opacity = 1;
+          }
+          else{
+            canvas.style.opacity = remainingTime/10;
+          }
+          remainingTime--;
+        }, 100);
+        //const canvas = document.getElementById('canvas');
+        
       });
 
       window.onmousedown = (e) => {  // Corrected line
@@ -353,8 +369,21 @@
 
       socket.on('startturn', (score) => {
         const messageContainer = document.getElementById('title');
+        messageContainer.style.opacity = 0;
         messageContainer.innerHTML = 'The Host has started the game, each player will have one turn to draw and many turns to guess<br>The host will draw first and the player who guesses the fastest will get most points<br> player with the highest points at the end wins!!';
         const con = document.getElementById('code');
+        let remainingTime = 10;
+        const timerInterval = setInterval(() => {
+          if (remainingTime < 0) {
+            clearInterval(timerInterval);
+            ctx.clearRect(0, 0, 3000, 4000);
+            messageContainer.style.opacity = 1;
+          }
+          else{
+            messageContainer.style.opacity = 1-remainingTime/10;
+          }
+          remainingTime--;
+        }, 100);
         con.innerHTML = '';
       });
 
