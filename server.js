@@ -13,10 +13,12 @@ app.get("/", (req, res) => {
   res.sendFile(__dirname + "/index.html");
 });
 let currentUserflag;
-const rooms = {};
+let hostname;
+let rooms = {};
 const myMap = new Map();
 io.on("connection", (socket) => {
   socket.on("createRoom", (username) => {
+    hostname = username;
     const roomCode = generateRoomCode();
     socket.join(roomCode);
     socket.emit("code", roomCode);
@@ -38,6 +40,10 @@ io.on("connection", (socket) => {
       "updateUsers",
       rooms[roomCode].users.map((user) => user.username)
     );
+    io.to(username.id).emit(
+      "updateUsersDEL",
+      rooms[roomCode].users.map((user) => user.username)
+    );
     const timestamp = new Date().toLocaleTimeString();
     const formattedMessage = `${timestamp} - ${username} ----> Created This Room`;
     rooms[roomCode].messages.push(formattedMessage);
@@ -49,6 +55,14 @@ io.on("connection", (socket) => {
       if (username == currentUserflag.username)
         io.to(roomCode).emit("clearcanvas");
     }
+  });
+  socket.on("endgame", (roomCode) => {
+    io.to(roomCode).emit("deleteall");
+    delete rooms[roomCode];
+  });
+  socket.on("deldel", (data) => {
+    const { roomCode, username } = data;
+    io.to(roomCode).emit("deleteit",username);
   });
   socket.on("joinRoom", (data) => {
     const { roomCode, username } = data;
@@ -67,6 +81,10 @@ io.on("connection", (socket) => {
         );
         io.to(roomCode).emit(
           "updateUsers",
+          rooms[roomCode].users.map((user) => user.username)
+        );
+        io.to(roomCode).emit(
+          "updateUsersDEL",
           rooms[roomCode].users.map((user) => user.username)
         );
         const timestamp = new Date().toLocaleTimeString();
@@ -98,7 +116,7 @@ io.on("connection", (socket) => {
     const { roomCode, username, coordinates } = data;
     if (currentUserflag) {
       if (username == currentUserflag.username)
-      io.to(roomCode).emit("draw", { username, coordinates });
+        io.to(roomCode).emit("draw", { username, coordinates });
     }
   });
   socket.on("canv", (data) => {
@@ -115,14 +133,16 @@ io.on("connection", (socket) => {
     const { roomCode, username, message } = data;
     const timestamp = new Date().toLocaleTimeString();
     const formattedMessage = `${timestamp} - ${username}: ${message}`;
-    myMap[message] = username;
+    myMap.set(message,username);
     rooms[roomCode].raws.push(message);
     rooms[roomCode].messages.push(formattedMessage);
     io.to(roomCode).emit("updateMessages", rooms[roomCode].messages);
+    myMap.forEach((value, key) => {
+      console.log(`${key} => ${value}`);
+    });
   });
 
   socket.on("disconnect", () => {
-    console.log("&&&");
     Object.keys(rooms).forEach((roomCode) => {
       const index = rooms[roomCode].users.findIndex(
         (user) => user.id === socket.id
@@ -131,6 +151,10 @@ io.on("connection", (socket) => {
         rooms[roomCode].users.splice(index, 1);
         io.to(roomCode).emit(
           "updateUsers",
+          rooms[roomCode].users.map((user) => user.username)
+        );
+        io.to(roomCode).emit(
+          "updateUsersDEL",
           rooms[roomCode].users.map((user) => user.username)
         );
       }
@@ -145,7 +169,7 @@ io.on("connection", (socket) => {
       const waitturn = () => {
         io.to(roomCode).emit("clearcanvas");
         currentUserflag = null;
-        io.to(roomCode).emit("changecurrentuser",currentUserflag);
+        io.to(roomCode).emit("changecurrentuser", currentUserflag);
         setTimeout(() => {
           startNextTurn(); // Start the next turn after a 5-second gap
         }, 5000);
@@ -159,7 +183,7 @@ io.on("connection", (socket) => {
         if (currentIndex < rooms[roomCode].users.length) {
           const currentUser = rooms[roomCode].users[currentIndex];
           currentUserflag = currentUser;
-          io.to(roomCode).emit("changecurrentuser",currentUserflag);
+          io.to(roomCode).emit("changecurrentuser", currentUserflag);
           console.log(roomCode);
           console.log(currentUser.username);
           let slug = randomWordSlugs.generateSlug(1, {
@@ -192,10 +216,10 @@ io.on("connection", (socket) => {
               remainingTime--;
               for (let i = 0; i < rooms[roomCode].raws.length; i++) {
                 if (
-                  rooms[roomCode].raws[i] == slug &&
+                  rooms[roomCode].raws[i].toLowerCase() == slug.toLowerCase() &&
                   myMap[slug] != currentUser.username
                 ) {
-                  guser = myMap[slug];
+                  guser = myMap.get(rooms[roomCode].raws[i]);
                   io.to(roomCode).emit("abrupt", {
                     guser,
                     slug,

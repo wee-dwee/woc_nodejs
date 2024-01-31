@@ -189,6 +189,20 @@
         transform: scale(1);
       }
     }
+
+    .t1 {
+      text-align: center;
+      box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+      border: 2px;
+      margin-top: 10px;
+      padding: auto;
+      transition: transform 0.5s ease-in-out;
+    }
+
+    .t1:hover {
+      transform: scale(1.02);
+    }
   </style>
 </head>
 
@@ -216,6 +230,7 @@
               <input type="text" id="roomCode" class="form-control" placeholder="Enter room code">
             </div>
             <div id="code"></div>
+            <div id="code1" class="t1"></div>
             <div class="form-group" id="but1">
               <button onclick="joinRoom()" class="btn btn-success">Join Room</button>
             </div>
@@ -239,22 +254,53 @@
   <script>
     // Your existing JavaScript code here
     const socket = io();
-
+    let hostname;
+    let currentUserflag1;
     socket.on('updateUsers', (users) => {
       document.getElementById('users').innerHTML = `<strong>Users:</strong> ${users.join(', ')}`;
     });
-    let currentUserflag1;
+    socket.on('updateUsersDEL', (users) => {
+      const username = document.getElementById('username').value;
+      if (username == hostname) {
+        const usersHtml = users
+          .filter(user => user !== hostname) // Exclude the host user
+          .map(user => `<div style="text-align:center;"><br>${user} <button value="${user}" onclick="delhandler('${user}')" class="btn btn-primary">&times;</button></div>`)
+          .join('');
+        document.getElementById('code1').innerHTML = `<strong>Users:Delete</strong>${usersHtml}`;
+      }
+    });
+
+
+    function delhandler(username) {
+      const roomCode = document.getElementById('roomCode').value.toUpperCase();
+      socket.emit('deldel', { roomCode, username });
+    }
+    socket.on('deleteit', (username) => {
+      //alert(roomCode);
+      const username1 = document.getElementById('username').value;
+      if (username == username1)
+        location.reload();
+
+    });
+    socket.on('deleteall', () => {
+      location.reload();
+    });
     socket.on('code', (roomCode) => {
       //alert(roomCode);
       const username = document.getElementById('username').value;
       //socket.emit('updateScore', { roomCode,username });
+      hostname = username;
       const messageContainer = document.getElementById('code');
       document.getElementById('roomCode').value = roomCode;
       messageContainer.innerHTML = `<button onclick="myFunction()" class="btn btn-primary">Copy Code</button>`;
       messageContainer.innerHTML += ` <button onclick="startgame()" class="btn btn-primary">Start Game</button>`;
+      messageContainer.innerHTML += ` <button onclick="endgame()" class="btn btn-primary">End</button>`;
       document.getElementById('roomCode').disabled = true;
     });
-
+    function endgame() {
+      const roomCode = document.getElementById('roomCode').value.toUpperCase();
+      socket.emit('endgame', roomCode);
+    }
     function myFunction() {
       var copyText = document.getElementById("roomCode");
       copyText.select();
@@ -268,7 +314,6 @@
       //alert(seconds);
 
       const username1 = document.getElementById('username').value;
-      console.log(username, username1);
       if (username1 == us1)
         document.getElementById('title').innerHTML = `You are The Painter Show Your Skills <br> WORD:${slug}<br> ${minutes}m ${seconds}s`;
       else
@@ -342,6 +387,11 @@
         LeaveRoom();
       }
     }
+    function confirmendgame() {
+      if (confirm('Are you sure you want to end?')) {
+        endgame();
+      }
+    }
 
     socket.on('roomError', (error) => {
       alert(error);
@@ -408,7 +458,6 @@
     socket.on('can-create', (data) => {
       const username = data;
       let canvas = document.getElementById('canvas');
-      console.log(canvas);
       canvas.width = 630;
       canvas.height = 500;
       let ctx = canvas.getContext('2d');
@@ -428,7 +477,6 @@
         lineColor = this.value;
       });
       socket.on('clearcanvas', () => {
-        console.log('TTY'); // Corrected line
         ctx.beginPath(); // Start a new path
 
         const canvas = document.getElementById('canvas');
