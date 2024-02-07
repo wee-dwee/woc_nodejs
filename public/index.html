@@ -523,10 +523,10 @@
           ctx.lineWidth = lineWidth;  // Set line width
           ctx.strokeStyle = lineColor;  // Set line color
           ctx.lineCap = 'round';
-          // if (currentUserflag1.username == username) {
-          //   ctx.lineTo(x, y);
-          //   //ctx.stroke();
-          // }
+          if (currentUserflag1.username == username) {
+            ctx.lineTo(x, y);
+            ctx.stroke();
+          }
           socket.emit('draw', { roomCode, username, coordinates: { x, y, lineWidth, lineColor } });
         }
       };
@@ -536,11 +536,15 @@
       // Modify the socket.on('draw') event to receive and use line width and color information
       socket.on('draw', (data) => {
         const { username, coordinates } = data;
-        ctx.lineWidth = coordinates.lineWidth;
-        ctx.strokeStyle = coordinates.lineColor;
-        ctx.lineCap = 'round';
-        ctx.lineTo(coordinates.x, coordinates.y);
-        ctx.stroke();
+        console.log(currentUserflag1.username);
+        const us1=document.getElementById('username');
+        if (currentUserflag1.username != us1) {
+          ctx.lineWidth = coordinates.lineWidth;
+          ctx.strokeStyle = coordinates.lineColor;
+          ctx.lineCap = 'round';
+          ctx.lineTo(coordinates.x, coordinates.y);
+          ctx.stroke();
+        }
       });
 
       // Modify the socket.on('ondown') event to receive and use line width and color information
