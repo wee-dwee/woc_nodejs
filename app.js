@@ -1,3 +1,4 @@
+//("dotenv").config();
 const express = require("express");
 const http = require("http");
 const socketIO = require("socket.io");
@@ -189,6 +190,9 @@ io.on("connection", (socket) => {
           let slug = randomWordSlugs.generateSlug(1, {
             format: "title",
             partsOfSpeech: ["noun"],
+            categories:{
+              noun:["animals","food","transportation","sports"],
+            },
           });
           let remainingTime = 60;
 

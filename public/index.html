@@ -525,7 +525,7 @@
           ctx.lineCap = 'round';
           if (currentUserflag1.username == username) {
             ctx.lineTo(x, y);
-            ctx.stroke();
+            //ctx.stroke();
           }
           socket.emit('draw', { roomCode, username, coordinates: { x, y, lineWidth, lineColor } });
         }
