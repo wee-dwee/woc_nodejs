@@ -217,7 +217,7 @@ io.on("connection", (socket) => {
               for (let i = 0; i < rooms[roomCode].raws.length; i++) {
                 if (
                   rooms[roomCode].raws[i].toLowerCase() == slug.toLowerCase() &&
-                  myMap[slug] != currentUser.username
+                  myMap.get(rooms[roomCode].raws[i]) != currentUser.username
                 ) {
                   guser = myMap.get(rooms[roomCode].raws[i]);
                   io.to(roomCode).emit("abrupt", {

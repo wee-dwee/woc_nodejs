@@ -317,7 +317,7 @@
       if (username1 == us1)
         document.getElementById('title').innerHTML = `You are The Painter Show Your Skills <br> WORD:${slug}<br> ${minutes}m ${seconds}s`;
       else
-        document.getElementById('title').innerHTML = `Round:${currentIndex + 1}<br>You Have to Guess<br>${minutes}m ${seconds}s`;
+        document.getElementById('title').innerHTML = `Round:${currentIndex + 1}<br>You Have to Guess <br>Word Length:${slug.length}<br>${minutes}m ${seconds}s`;
     });
     socket.on('wordnword', (data) => {
       const { us1, slug } = data;
