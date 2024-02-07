@@ -523,10 +523,10 @@
           ctx.lineWidth = lineWidth;  // Set line width
           ctx.strokeStyle = lineColor;  // Set line color
           ctx.lineCap = 'round';
-          if (currentUserflag1.username == username) {
-            ctx.lineTo(x, y);
-            //ctx.stroke();
-          }
+          // if (currentUserflag1.username == username) {
+          //   ctx.lineTo(x, y);
+          //   //ctx.stroke();
+          // }
           socket.emit('draw', { roomCode, username, coordinates: { x, y, lineWidth, lineColor } });
         }
       };
