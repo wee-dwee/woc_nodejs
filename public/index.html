@@ -203,6 +203,25 @@
     .t1:hover {
       transform: scale(1.02);
     }
+
+    .whiteboard-container {
+      padding: 10px;
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    #whiteboard-container {
+      position: relative;
+      width: 100%;
+      padding-bottom: 75%;
+    }
+
+    canvas {
+      position: absolute;
+      width: 97%;
+      height: 95%;
+      border: 1px solid #000;
+    }
   </style>
 </head>
 
@@ -323,7 +342,7 @@
       const { us1, slug } = data;
       const username1 = document.getElementById('username').value;
       if (username1 == us1)
-        document.getElementById('title').innerHTML = `You need Practicing Blahh!! `;
+        document.getElementById('title').innerHTML = `Your turn is now over `;
       else
         document.getElementById('title').innerHTML = `The word was ${slug}`;
     });
@@ -332,6 +351,9 @@
       document.getElementById('title').innerHTML = `${guser} Guessed it correctly , the word was ${slug} `;
     });
     socket.on('showontitle', (winner) => {
+      document.getElementById('title').innerHTML = `${winner} IS leading the game`;
+    });
+    socket.on('showontitleend', (winner) => {
       document.getElementById('title').innerHTML = `${winner} Has Won the Game!!, Congrats`;
     });
     socket.on('updateMessages', (messages) => {
@@ -560,6 +582,7 @@
 
       socket.on('startturn', (score) => {
         const messageContainer = document.getElementById('title');
+        const username=document.getElementById('username');
         messageContainer.style.opacity = 0;
         messageContainer.innerHTML = 'The Host has started the game, each player will have one turn to draw and many turns to guess<br>The host will draw first and the player who guesses the fastest will get most points<br> player with the highest points at the end wins!!';
         const con = document.getElementById('code');
@@ -567,7 +590,8 @@
         const timerInterval = setInterval(() => {
           if (remainingTime < 0) {
             clearInterval(timerInterval);
-            ctx.clearRect(0, 0, 3000, 4000);
+            //if(hostname==username)
+            //ctx.clearRect(0, 0, 3000, 4000);
             messageContainer.style.opacity = 1;
           }
           else {

@@ -13,15 +13,17 @@ app.use(express.static("public"));
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/index.html");
 });
-let currentUserflag;
-let hostname;
+let currentUserflag={};
+let hostname={};
 let rooms = {};
+let roomWord = {};
 const myMap = new Map();
 io.on("connection", (socket) => {
   socket.on("createRoom", (username) => {
-    hostname = username;
     const roomCode = generateRoomCode();
+    hostname[roomCode] = username;
     socket.join(roomCode);
+    roomWord[roomCode] = "";
     socket.emit("code", roomCode);
     rooms[roomCode] = {
       users: [{ id: socket.id, username, score: 0 }],
@@ -52,8 +54,8 @@ io.on("connection", (socket) => {
   });
   socket.on("canclear", (data) => {
     const { roomCode, username } = data;
-    if (currentUserflag) {
-      if (username == currentUserflag.username)
+    if (currentUserflag[roomCode]) {
+      if (username == currentUserflag[roomCode].username)
         io.to(roomCode).emit("clearcanvas");
     }
   });
@@ -63,7 +65,7 @@ io.on("connection", (socket) => {
   });
   socket.on("deldel", (data) => {
     const { roomCode, username } = data;
-    io.to(roomCode).emit("deleteit",username);
+    io.to(roomCode).emit("deleteit", username);
   });
   socket.on("joinRoom", (data) => {
     const { roomCode, username } = data;
@@ -72,7 +74,7 @@ io.on("connection", (socket) => {
         (user) => user.username === username
       );
       if (userExists) {
-        socket.emit("roomError", "Already Entered");
+        socket.emit("roomError", "Already Entered,Change Username");
       } else {
         socket.join(roomCode);
         rooms[roomCode].users.push({ id: socket.id, username, score: 0 });
@@ -115,8 +117,11 @@ io.on("connection", (socket) => {
   });
   socket.on("draw", (data) => {
     const { roomCode, username, coordinates } = data;
-    if (currentUserflag) {
-      if (username == currentUserflag.username)
+    console.log("$$$");
+    console.log(currentUserflag[roomCode]);
+    if (currentUserflag[roomCode]) {
+      console.log(currentUserflag[roomCode].username);
+      if (username == currentUserflag[roomCode].username)
         io.to(roomCode).emit("draw", { username, coordinates });
     }
   });
@@ -133,8 +138,11 @@ io.on("connection", (socket) => {
   socket.on("sendMessage", (data) => {
     const { roomCode, username, message } = data;
     const timestamp = new Date().toLocaleTimeString();
-    const formattedMessage = `${timestamp} - ${username}: ${message}`;
-    myMap.set(message,username);
+    let formattedMessage = `${timestamp} - ${username}: ${message}`;
+    if (roomWord[roomCode].toLowerCase() == message.toLowerCase()) {
+      formattedMessage=`${timestamp} - ${username}: Guessed it correctly`;
+    }
+    myMap.set(message, username);
     rooms[roomCode].raws.push(message);
     rooms[roomCode].messages.push(formattedMessage);
     io.to(roomCode).emit("updateMessages", rooms[roomCode].messages);
@@ -163,14 +171,15 @@ io.on("connection", (socket) => {
   });
   socket.on("startgame", (data) => {
     const { username, roomCode } = data;
+    let t = 3;
     if (rooms[roomCode]) {
       console.log(rooms[roomCode].users.length);
       let currentIndex = 0;
       let guser;
       const waitturn = () => {
         io.to(roomCode).emit("clearcanvas");
-        currentUserflag = null;
-        io.to(roomCode).emit("changecurrentuser", currentUserflag);
+        currentUserflag[roomCode] = null;
+        io.to(roomCode).emit("changecurrentuser", currentUserflag[roomCode]);
         setTimeout(() => {
           startNextTurn(); // Start the next turn after a 5-second gap
         }, 5000);
@@ -183,17 +192,20 @@ io.on("connection", (socket) => {
       const startNextTurn = () => {
         if (currentIndex < rooms[roomCode].users.length) {
           const currentUser = rooms[roomCode].users[currentIndex];
-          currentUserflag = currentUser;
-          io.to(roomCode).emit("changecurrentuser", currentUserflag);
+          console.log(currentUser);
+          console.log('##');
+          currentUserflag[roomCode] = currentUser;
+          io.to(roomCode).emit("changecurrentuser", currentUserflag[roomCode]);
           console.log(roomCode);
           console.log(currentUser.username);
           let slug = randomWordSlugs.generateSlug(1, {
             format: "title",
             partsOfSpeech: ["noun"],
-            categories:{
-              noun:["animals","food","transportation","sports"],
+            categories: {
+              noun: ["animals", "food", "transportation", "sports"],
             },
           });
+          roomWord[roomCode]=slug.toLowerCase();
           let remainingTime = 60;
 
           const timerInterval = setInterval(() => {
@@ -224,11 +236,12 @@ io.on("connection", (socket) => {
                   myMap.get(rooms[roomCode].raws[i]) != currentUser.username
                 ) {
                   guser = myMap.get(rooms[roomCode].raws[i]);
-                  io.to(roomCode).emit("abrupt", {
-                    guser,
-                    slug,
-                  });
-                  clearInterval(timerInterval);
+                  myMap.delete(rooms[roomCode].raws[i]);
+                  // io.to(roomCode).emit("abrupt", {
+                  //   guser,
+                  //   slug,
+                  // });
+                  //clearInterval(timerInterval);
                   let formattedMessage;
                   io.to(roomCode).emit("clearscore");
                   if (rooms[roomCode] != null) {
@@ -242,8 +255,6 @@ io.on("connection", (socket) => {
                     }
                   }
                   io.to(roomCode).emit("newscore", rooms[roomCode].score);
-                  currentIndex++; // Move to the next user
-                  waitturn();
                 }
               }
             }
@@ -259,8 +270,13 @@ io.on("connection", (socket) => {
                 winner = rooms[roomCode].users[i].username;
                 wineerscore = rooms[roomCode].users[i].score;
               }
-              io.to(roomCode).emit("showontitle", winner);
             }
+            io.to(roomCode).emit("showontitle", winner);
+            t--;
+            if (t) {
+              currentIndex = 0;
+              startturn();
+            } else io.to(roomCode).emit("showontitleend", winner);
           }
         }
       };
